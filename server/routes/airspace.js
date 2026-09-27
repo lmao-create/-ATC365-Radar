@@ -4,14 +4,14 @@ import { getAllAirspace, seedDefaultAirspace } from '../models/Airspace.js';
 const router = express.Router();
 
 // Get all airspace
-router.get('/', async (req, res) => {
+router.get('/', (req, res) => {
   try {
-    let airspaces = await getAllAirspace();
+    let airspaces = getAllAirspace();
 
     // Seed if empty
     if (airspaces.length === 0) {
-      await seedDefaultAirspace();
-      airspaces = await getAllAirspace();
+      seedDefaultAirspace();
+      airspaces = getAllAirspace();
     }
 
     res.json(airspaces);

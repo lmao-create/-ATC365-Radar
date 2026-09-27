@@ -10,6 +10,7 @@ interface ControlPanelProps {
   onToggleAirspace: () => void
   showGroundRadar: boolean
   onToggleGroundRadar: () => void
+  flightCount?: number
 }
 
 export default function ControlPanel({
@@ -22,11 +23,14 @@ export default function ControlPanel({
   onToggleAirspace,
   showGroundRadar,
   onToggleGroundRadar,
+  flightCount = 0,
 }: ControlPanelProps) {
+  const selectedAirportData = airports.find(a => a.icao === selectedAirport)
+
   return (
     <div className="control-panel">
       <div className="panel-section">
-        <h3>Airport</h3>
+        <h3>🛫 Airport</h3>
         <select
           value={selectedAirport || ''}
           onChange={(e) => e.target.value && onAirportSelect(e.target.value)}
@@ -35,27 +39,33 @@ export default function ControlPanel({
           <option value="">Select Airport</option>
           {airports.map((airport) => (
             <option key={airport.id} value={airport.icao}>
-              {airport.icao} - {airport.name}
+              {airport.icao} — {airport.iata}
             </option>
           ))}
         </select>
+        {selectedAirportData && (
+          <div className="info-item" style={{ marginTop: '0.5rem' }}>
+            <strong>{selectedAirportData.name}</strong><br />
+            Elev: {selectedAirportData.elevation} ft
+          </div>
+        )}
       </div>
 
       <div className="panel-section">
-        <h3>View</h3>
+        <h3>🔍 View</h3>
         <div className="zoom-control">
           <button onClick={() => onZoomChange(Math.max(0.5, zoom - 0.5))}>
-            Zoom Out
+            −
           </button>
-          <span>{zoom.toFixed(1)}x</span>
+          <span>{zoom.toFixed(1)}×</span>
           <button onClick={() => onZoomChange(Math.min(3, zoom + 0.5))}>
-            Zoom In
+            +
           </button>
         </div>
       </div>
 
       <div className="panel-section">
-        <h3>Layers</h3>
+        <h3>📊 Layers</h3>
         <label className="toggle-label">
           <input
             type="checkbox"
@@ -75,16 +85,26 @@ export default function ControlPanel({
       </div>
 
       <div className="panel-section">
-        <h3>Tools</h3>
-        <button className="tool-btn">Measure</button>
-        <button className="tool-btn">Pin Aircraft</button>
-        <button className="tool-btn">Charts</button>
+        <h3>⚙️ Tools</h3>
+        <button className="tool-btn">📏 Measure</button>
+        <button className="tool-btn">📌 Pin Aircraft</button>
+        <button className="tool-btn">📄 Charts</button>
       </div>
 
       <div className="panel-section info">
-        <h3>Info</h3>
-        <p className="info-item">Connected: Yes</p>
-        <p className="info-item">Format: Digital Radar</p>
+        <h3>ℹ️ Status</h3>
+        <div className="info-item">
+          <strong>Aircraft:</strong> {flightCount}
+        </div>
+        <div className="info-item">
+          <strong>Format:</strong> Digital Radar
+        </div>
+        <div className="info-item">
+          <strong>Update Rate:</strong> 500ms
+        </div>
+        <div className="info-item">
+          <strong>Data:</strong> Mock Flight Data
+        </div>
       </div>
     </div>
   )

@@ -4,9 +4,9 @@ import { getAllFlights, getFlightByCallsign } from '../models/Flight.js';
 const router = express.Router();
 
 // Get all flights
-router.get('/', async (req, res) => {
+router.get('/', (req, res) => {
   try {
-    const flights = await getAllFlights();
+    const flights = getAllFlights();
     res.json(flights);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -14,9 +14,9 @@ router.get('/', async (req, res) => {
 });
 
 // Get flight by callsign
-router.get('/:callsign', async (req, res) => {
+router.get('/:callsign', (req, res) => {
   try {
-    const flight = await getFlightByCallsign(req.params.callsign);
+    const flight = getFlightByCallsign(req.params.callsign);
     if (!flight) {
       return res.status(404).json({ error: 'Flight not found' });
     }

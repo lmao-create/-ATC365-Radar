@@ -34,9 +34,9 @@ export function setupWebSocket(wss) {
   startBroadcasting();
 }
 
-async function sendInitialData(ws) {
+function sendInitialData(ws) {
   try {
-    const flights = await getAllFlights();
+    const flights = getAllFlights();
     ws.send(JSON.stringify({
       type: 'initial',
       data: flights,
@@ -49,9 +49,9 @@ async function sendInitialData(ws) {
 
 function startBroadcasting() {
   // Send position updates every 500ms
-  updateInterval = setInterval(async () => {
+  updateInterval = setInterval(() => {
     try {
-      const flights = await getAllFlights();
+      const flights = getAllFlights();
       const message = JSON.stringify({
         type: 'update',
         data: flights,

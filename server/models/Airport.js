@@ -1,32 +1,31 @@
 import { query } from '../config/database.js';
 
-export async function getAllAirports() {
-  const result = await query('SELECT * FROM airports ORDER BY icao');
+export function getAllAirports() {
+  const result = query('SELECT * FROM airports ORDER BY icao');
   return result.rows;
 }
 
-export async function getAirportById(id) {
-  const result = await query('SELECT * FROM airports WHERE id = $1', [id]);
+export function getAirportById(id) {
+  const result = query('SELECT * FROM airports WHERE id = ?', [id]);
   return result.rows[0];
 }
 
-export async function getAirportByIcao(icao) {
-  const result = await query('SELECT * FROM airports WHERE icao = $1', [icao]);
+export function getAirportByIcao(icao) {
+  const result = query('SELECT * FROM airports WHERE icao = ?', [icao]);
   return result.rows[0];
 }
 
-export async function createAirport(airportData) {
+export function createAirport(airportData) {
   const { icao, iata, name, latitude, longitude, elevation } = airportData;
-  const result = await query(
+  const result = query(
     `INSERT INTO airports (icao, iata, name, latitude, longitude, elevation)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING *`,
+     VALUES (?, ?, ?, ?, ?, ?)`,
     [icao, iata, name, latitude, longitude, elevation]
   );
-  return result.rows[0];
+  return { id: result.lastID, ...airportData };
 }
 
-export async function seedDefaultAirports() {
+export function seedDefaultAirports() {
   const airports = [
     { icao: 'KJFK', iata: 'JFK', name: 'John F. Kennedy International', latitude: 40.6413, longitude: -73.7781, elevation: 13 },
     { icao: 'KLGA', iata: 'LGA', name: 'LaGuardia Airport', latitude: 40.7769, longitude: -73.8740, elevation: 11 },
@@ -39,9 +38,9 @@ export async function seedDefaultAirports() {
 
   for (const airport of airports) {
     try {
-      const existing = await getAirportByIcao(airport.icao);
+      const existing = getAirportByIcao(airport.icao);
       if (!existing) {
-        await createAirport(airport);
+        createAirport(airport);
         console.log(`✓ Seeded airport: ${airport.icao}`);
       }
     } catch (error) {

@@ -1,27 +1,35 @@
 import { query } from '../config/database.js';
 
-export async function getAllAirspace() {
-  const result = await query('SELECT * FROM airspace ORDER BY name');
-  return result.rows;
+export function getAllAirspace() {
+  const result = query('SELECT * FROM airspace ORDER BY name');
+  return result.rows.map(row => ({
+    ...row,
+    polygon_points: JSON.parse(row.polygon_points || '[]')
+  }));
 }
 
-export async function getAirspaceById(id) {
-  const result = await query('SELECT * FROM airspace WHERE id = $1', [id]);
-  return result.rows[0];
+export function getAirspaceById(id) {
+  const result = query('SELECT * FROM airspace WHERE id = ?', [id]);
+  if (result.rows[0]) {
+    return {
+      ...result.rows[0],
+      polygon_points: JSON.parse(result.rows[0].polygon_points || '[]')
+    };
+  }
+  return null;
 }
 
-export async function createAirspace(airspaceData) {
+export function createAirspace(airspaceData) {
   const { name, type, floor_altitude, ceiling_altitude, polygon_points } = airspaceData;
-  const result = await query(
+  const result = query(
     `INSERT INTO airspace (name, type, floor_altitude, ceiling_altitude, polygon_points)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING *`,
+     VALUES (?, ?, ?, ?, ?)`,
     [name, type, floor_altitude, ceiling_altitude, JSON.stringify(polygon_points)]
   );
-  return result.rows[0];
+  return { id: result.lastID, ...airspaceData };
 }
 
-export async function seedDefaultAirspace() {
+export function seedDefaultAirspace() {
   const airspaces = [
     {
       name: 'NYC TRACON',
@@ -51,9 +59,9 @@ export async function seedDefaultAirspace() {
 
   for (const airspace of airspaces) {
     try {
-      const existing = await query('SELECT * FROM airspace WHERE name = $1', [airspace.name]);
-      if (existing.rows.length === 0) {
-        await createAirspace(airspace);
+      const result = query('SELECT * FROM airspace WHERE name = ?', [airspace.name]);
+      if (result.rows.length === 0) {
+        createAirspace(airspace);
         console.log(`✓ Seeded airspace: ${airspace.name}`);
       }
     } catch (error) {

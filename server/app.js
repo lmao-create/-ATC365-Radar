@@ -44,24 +44,20 @@ setupWebSocket(wss);
 // Initialize and start
 const PORT = process.env.PORT || 3001;
 
-async function start() {
-  try {
-    console.log('Initializing database...');
-    await initializeDatabase();
+try {
+  console.log('Initializing database...');
+  initializeDatabase();
 
-    console.log('Starting flight generator...');
-    startFlightGenerator();
+  console.log('Starting flight generator...');
+  startFlightGenerator();
 
-    httpServer.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`WebSocket server ready`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
+  httpServer.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`WebSocket server ready`);
+  });
+} catch (error) {
+  console.error('Failed to start server:', error);
+  process.exit(1);
 }
-
-start();
 
 export { app, wss };

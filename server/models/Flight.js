@@ -1,7 +1,7 @@
 import { query } from '../config/database.js';
 
-export async function getAllFlights() {
-  const result = await query(`
+export function getAllFlights() {
+  const result = query(`
     SELECT
       f.id,
       f.callsign,
@@ -27,17 +27,17 @@ export async function getAllFlights() {
   return result.rows;
 }
 
-export async function getFlightByCallsign(callsign) {
-  const result = await query(
+export function getFlightByCallsign(callsign) {
+  const result = query(
     `SELECT f.*, a.* FROM flights f
      LEFT JOIN aircraft a ON f.id = a.flight_id
-     WHERE f.callsign = $1`,
+     WHERE f.callsign = ?`,
     [callsign]
   );
   return result.rows[0];
 }
 
-export async function updateAircraftPosition(callsign, position) {
+export function updateAircraftPosition(callsign, position) {
   const {
     latitude,
     longitude,
@@ -49,38 +49,36 @@ export async function updateAircraftPosition(callsign, position) {
     status
   } = position;
 
-  await query(
+  query(
     `UPDATE aircraft
-     SET latitude = $1, longitude = $2, altitude = $3, heading = $4,
-         ground_speed = $5, vertical_speed = $6, squawk = $7,
-         status = $8, updated_at = CURRENT_TIMESTAMP
-     WHERE callsign = $9`,
+     SET latitude = ?, longitude = ?, altitude = ?, heading = ?,
+         ground_speed = ?, vertical_speed = ?, squawk = ?,
+         status = ?, updated_at = CURRENT_TIMESTAMP
+     WHERE callsign = ?`,
     [latitude, longitude, altitude, heading, ground_speed, vertical_speed, squawk, status, callsign]
   );
 }
 
-export async function createFlight(flightData) {
+export function createFlight(flightData) {
   const { callsign, aircraft_type, origin_id, destination_id, filed_altitude, route, status } = flightData;
 
-  const result = await query(
+  const result = query(
     `INSERT INTO flights (callsign, aircraft_type, origin_id, destination_id, filed_altitude, route, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
-     RETURNING *`,
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [callsign, aircraft_type, origin_id, destination_id, filed_altitude, route, status]
   );
 
-  return result.rows[0];
+  return { id: result.lastID, ...flightData };
 }
 
-export async function createAircraft(flightId, callsign, initialPosition) {
-  const result = await query(
+export function createAircraft(flightId, callsign, initialPosition) {
+  const result = query(
     `INSERT INTO aircraft (flight_id, callsign, latitude, longitude, altitude, heading, ground_speed, vertical_speed, squawk, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-     RETURNING *`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [flightId, callsign, initialPosition.latitude, initialPosition.longitude, initialPosition.altitude || 0,
      initialPosition.heading || 0, initialPosition.ground_speed || 0, initialPosition.vertical_speed || 0,
      initialPosition.squawk || '1200', 'active']
   );
 
-  return result.rows[0];
+  return { id: result.lastID, ...initialPosition };
 }

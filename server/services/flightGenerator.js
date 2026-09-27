@@ -8,15 +8,15 @@ const aircraftTypes = ['B737', 'A320', 'B777', 'A350', 'CRJ9', 'E175', 'B787', '
 let activeFlights = [];
 let generatorInterval;
 
-export async function startFlightGenerator() {
+export function startFlightGenerator() {
   console.log('Starting flight generator...');
 
   // Initial seed of flights
-  await seedInitialFlights();
+  seedInitialFlights();
 
   // Update positions every 500ms
-  generatorInterval = setInterval(async () => {
-    await updateAllFlights();
+  generatorInterval = setInterval(() => {
+    updateAllFlights();
   }, 500);
 }
 
@@ -26,10 +26,15 @@ export function stopFlightGenerator() {
   }
 }
 
-async function seedInitialFlights() {
+function seedInitialFlights() {
   try {
-    const airports = await getAllAirports();
-    const existingFlights = await getAllFlights();
+    const airports = getAllAirports();
+    const existingFlights = getAllFlights();
+
+    if (!airports || airports.length === 0) {
+      console.log('No airports available, skipping flight generation');
+      return;
+    }
 
     if (existingFlights.length > 0) {
       console.log(`✓ Found ${existingFlights.length} existing flights`);
@@ -50,9 +55,9 @@ async function seedInitialFlights() {
       const origin = airports[Math.floor(Math.random() * airports.length)];
       const destination = airports[Math.floor(Math.random() * airports.length)];
 
-      if (origin.id === destination.id) continue;
+      if (!origin || !destination || origin.id === destination.id) continue;
 
-      const flight = await createFlight({
+      const flight = createFlight({
         callsign,
         aircraft_type: aircraftTypes[Math.floor(Math.random() * aircraftTypes.length)],
         origin_id: origin.id,
@@ -73,7 +78,7 @@ async function seedInitialFlights() {
         squawk: generateSquawk()
       };
 
-      await createAircraft(flight.id, callsign, initialPos);
+      createAircraft(flight.id, callsign, initialPos);
 
       activeFlights.push({
         callsign,
@@ -89,7 +94,7 @@ async function seedInitialFlights() {
   }
 }
 
-async function updateAllFlights() {
+function updateAllFlights() {
   for (const flight of activeFlights) {
     try {
       const heading = Math.random() * 360;
@@ -100,7 +105,7 @@ async function updateAllFlights() {
       const latDelta = (Math.random() - 0.5) * 0.001;
       const lngDelta = (Math.random() - 0.5) * 0.001;
 
-      await updateAircraftPosition(flight.callsign, {
+      updateAircraftPosition(flight.callsign, {
         latitude: 40.7 + latDelta,
         longitude: -74.0 + lngDelta,
         altitude: Math.floor(Math.random() * 35000),

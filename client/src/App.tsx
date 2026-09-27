@@ -70,6 +70,7 @@ function App() {
           onToggleAirspace={() => setShowAirspace(!showAirspace)}
           showGroundRadar={showGroundRadar}
           onToggleGroundRadar={() => setShowGroundRadar(!showGroundRadar)}
+          flightCount={flights.length}
         />
       </div>
     </div>
