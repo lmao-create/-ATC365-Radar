@@ -1,331 +1,217 @@
-# ATC365 Radar - Server Integration Guide
+# ATC365 Radar - Roblox Integration
 
-This radar system is designed to work with any ATC server. Use this guide to integrate your own flight data source.
+A professional real-time radar system for Roblox PTFS (Pilot Training Flight Simulator) servers. Display live aircraft positions with a polished ATC interface.
 
-## Architecture
+## 🚀 Quick Start
 
-```
-Your ATC Server (Roblox/Other) 
-         ↓
-    Flight Data
-         ↓
-   Backend Server (Node.js)
-    ↙         ↖
-   ↙           ↖
-WebSocket    REST API
-   ↙           ↖
-Frontend       External Systems
-```
-
-## Integration Methods
-
-### Method 1: HTTP POST (Simplest)
-
-Your server sends flight data via HTTP POST to the backend:
+### 1. Backend Setup
 
 ```bash
-curl -X POST http://localhost:3001/api/flights/update \
-  -H "Content-Type: application/json" \
-  -d '[
-    {
-      "callsign": "AAL123",
-      "latitude": 40.6413,
-      "longitude": -73.7781,
-      "altitude": 5000,
-      "heading": 180,
-      "ground_speed": 450,
-      "vertical_speed": 0,
-      "squawk": "1234",
-      "status": "active"
-    }
-  ]'
-```
-
-### Method 2: Direct Database Access
-
-If your ATC server uses a database:
-- Store flight data in the backend database
-- Backend queries it directly
-- No integration needed from your server
-
-### Method 3: WebSocket Direct Connection
-
-Your server connects directly to our WebSocket server and sends flight updates:
-
-```javascript
-const ws = new WebSocket('ws://localhost:3001');
-
-ws.onopen = () => {
-  // Send flight data periodically
-  setInterval(() => {
-    ws.send(JSON.stringify({
-      type: 'flight_update',
-      data: {
-        callsign: 'AAL123',
-        latitude: 40.6413,
-        longitude: -73.7781,
-        altitude: 5000,
-        heading: 180,
-        ground_speed: 450,
-        vertical_speed: 0,
-        squawk: '1234',
-        status: 'active'
-      }
-    }));
-  }, 500);
-};
-```
-
-## Flight Data Format
-
-```typescript
-interface FlightData {
-  callsign: string;           // e.g., "AAL123", "UAL456"
-  latitude: number;           // Decimal degrees (-90 to 90)
-  longitude: number;          // Decimal degrees (-180 to 180)
-  altitude: number;           // Feet above sea level
-  heading: number;            // Degrees (0-360)
-  ground_speed: number;       // Knots
-  vertical_speed?: number;    // Feet per minute (optional)
-  squawk?: string;            // Transponder code (optional, default: "1200")
-  status?: string;            // "active", "landing", "takeoff", etc.
-  origin?: string;            // Airport ICAO code (optional)
-  destination?: string;       // Airport ICAO code (optional)
-  aircraft_type?: string;     // e.g., "B737", "A320" (optional)
-}
-```
-
-## Environment Configuration
-
-Create a `.env` file in the `server/` directory:
-
-```bash
-# Server
-PORT=3001
-NODE_ENV=development
-
-# Database (SQLite by default)
-DB_NAME=atc365_radar
-
-# Optional: Enable HTTP endpoints for data ingestion
-ENABLE_FLIGHT_ENDPOINT=true
-FLIGHT_ENDPOINT_KEY=your_secret_key
-```
-
-## API Endpoints
-
-### Get All Flights
-```
-GET /api/flights
-```
-
-Response:
-```json
-[
-  {
-    "id": 1,
-    "callsign": "AAL123",
-    "latitude": 40.6413,
-    "longitude": -73.7781,
-    "altitude": 5000,
-    "heading": 180,
-    "ground_speed": 450,
-    "vertical_speed": 0,
-    "squawk": "1234",
-    "status": "active"
-  }
-]
-```
-
-### Update Flight Data (Requires API Key)
-```
-POST /api/flights/update
-Content-Type: application/json
-Authorization: Bearer YOUR_API_KEY
-
-[
-  {
-    "callsign": "AAL123",
-    "latitude": 40.6413,
-    "longitude": -73.7781,
-    "altitude": 5000,
-    "heading": 180,
-    "ground_speed": 450,
-    "vertical_speed": 0,
-    "squawk": "1234",
-    "status": "active"
-  }
-]
-```
-
-### Get Airports
-```
-GET /api/airports
-```
-
-### Add Custom Airport
-```
-POST /api/airports
-Content-Type: application/json
-
-{
-  "icao": "KJFK",
-  "iata": "JFK",
-  "name": "John F. Kennedy International",
-  "latitude": 40.6413,
-  "longitude": -73.7781,
-  "elevation": 13
-}
-```
-
-## WebSocket Protocol
-
-### Client Connection
-1. Connect to `ws://localhost:3001`
-2. Receive initial flight data with `type: "initial"`
-3. Receive updates with `type: "update"` every 500ms
-
-### Sending Data (Server → Backend)
-```json
-{
-  "type": "flight_update",
-  "data": {
-    "callsign": "AAL123",
-    "latitude": 40.6413,
-    "longitude": -73.7781,
-    "altitude": 5000,
-    "heading": 180,
-    "ground_speed": 450,
-    "vertical_speed": 0,
-    "squawk": "1234",
-    "status": "active"
-  }
-}
-```
-
-## Examples
-
-### Roblox Integration (Lua)
-```lua
-local HttpService = game:GetService("HttpService")
-local flightData = {
-  callsign = "AAL123",
-  latitude = 40.6413,
-  longitude = -73.7781,
-  altitude = 5000,
-  heading = 180,
-  ground_speed = 450,
-  vertical_speed = 0,
-  squawk = "1234",
-  status = "active"
-}
-
-local json = HttpService:JSONEncode({flightData})
-HttpService:PostAsync("http://localhost:3001/api/flights/update", json, Enum.HttpContentType.ApplicationJson)
-```
-
-### Python Integration
-```python
-import requests
-import json
-import time
-
-BACKEND_URL = "http://localhost:3001/api/flights/update"
-API_KEY = "your_secret_key"
-
-def send_flight_data(flights):
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {API_KEY}"
-    }
-    response = requests.post(BACKEND_URL, json=flights, headers=headers)
-    return response.status_code == 200
-
-flights = [
-    {
-        "callsign": "AAL123",
-        "latitude": 40.6413,
-        "longitude": -73.7781,
-        "altitude": 5000,
-        "heading": 180,
-        "ground_speed": 450,
-        "vertical_speed": 0,
-        "squawk": "1234",
-        "status": "active"
-    }
-]
-
-# Send every 500ms
-while True:
-    send_flight_data(flights)
-    time.sleep(0.5)
-```
-
-### JavaScript/Node.js Integration
-```javascript
-const WebSocket = require('ws');
-
-const ws = new WebSocket('ws://localhost:3001');
-
-ws.on('open', () => {
-  const flightData = {
-    callsign: 'AAL123',
-    latitude: 40.6413,
-    longitude: -73.7781,
-    altitude: 5000,
-    heading: 180,
-    ground_speed: 450,
-    vertical_speed: 0,
-    squawk: '1234',
-    status: 'active'
-  };
-
-  // Send every 500ms
-  setInterval(() => {
-    ws.send(JSON.stringify({
-      type: 'flight_update',
-      data: flightData
-    }));
-  }, 500);
-});
-```
-
-## Deployment
-
-### Docker
-```bash
-docker-compose up
-```
-
-### Manual
-```bash
-# Backend
-cd server
+git clone https://github.com/yourusername/atc365-radar
+cd atc365-radar/server
 npm install
 npm run dev
+```
 
-# Frontend (in another terminal)
+Backend runs on `http://localhost:3001`
+
+### 2. Frontend Setup
+
+```bash
 cd client
 npm install
 npm run dev
 ```
 
-## Troubleshooting
+Frontend runs on `http://localhost:3000`
 
-### WebSocket Connection Refused
-- Check backend is running on port 3001
-- Check firewall allows port 3001
-- Verify backend URL in frontend config
+### 3. Roblox Server Integration
 
-### Flights Not Updating
-- Check flight data is being sent to backend
-- Verify callsign field is unique
-- Check browser console for errors
+Add this Lua script to your Roblox PTFS server:
 
-### Database Issues
-- Delete `atc365_radar.db` to reset database
-- Restart backend server
+```lua
+-- Place this in ServerScriptService
+local HttpService = game:GetService("HttpService")
+local BACKEND_URL = "http://localhost:3001/api/flights/update"
+local UPDATE_INTERVAL = 0.5 -- 500ms
 
-## Support
+-- Get all active flights from your game
+local function getActiveFlights()
+    local flights = {}
+    
+    -- Replace this with your actual flight data logic
+    -- Example: iterate through your game's aircraft/flight objects
+    for _, aircraft in pairs(game.Workspace:FindDescendants()) do
+        if aircraft:FindFirstChild("FlightData") then
+            local data = aircraft.FlightData
+            table.insert(flights, {
+                callsign = data.Callsign.Value,
+                latitude = data.Latitude.Value,
+                longitude = data.Longitude.Value,
+                altitude = data.Altitude.Value,
+                heading = data.Heading.Value,
+                ground_speed = data.Speed.Value,
+                vertical_speed = data.VerticalSpeed.Value or 0,
+                squawk = data.Squawk.Value or "1200",
+                status = data.Status.Value or "active"
+            })
+        end
+    end
+    
+    return flights
+end
 
-For issues or questions, open an issue on GitHub.
+-- Send flight data to radar backend
+local function updateRadar()
+    local flights = getActiveFlights()
+    
+    if #flights > 0 then
+        local success, response = pcall(function()
+            return HttpService:PostAsync(
+                BACKEND_URL,
+                HttpService:JSONEncode(flights),
+                Enum.HttpContentType.ApplicationJson
+            )
+        end)
+        
+        if success then
+            print("✓ Updated radar with " .. #flights .. " flights")
+        else
+            print("✗ Failed to update radar: " .. tostring(response))
+        end
+    end
+end
+
+-- Update radar every 500ms
+while true do
+    wait(UPDATE_INTERVAL)
+    updateRadar()
+end
+```
+
+## 📋 Flight Data Format
+
+Your Roblox script should send data in this format:
+
+```lua
+{
+    callsign = "AAL123",        -- Callsign
+    latitude = 40.6413,         -- Latitude (-90 to 90)
+    longitude = -73.7781,       -- Longitude (-180 to 180)
+    altitude = 5000,            -- Altitude (feet)
+    heading = 180,              -- Heading (0-360 degrees)
+    ground_speed = 450,         -- Ground speed (knots)
+    vertical_speed = 0,         -- Vertical speed (fpm, optional)
+    squawk = "1234",            -- Squawk code (optional)
+    status = "active"           -- Status (optional)
+}
+```
+
+## 🛠️ Backend API
+
+### Health Check
+```bash
+GET http://localhost:3001/health
+```
+
+### Get All Flights
+```bash
+GET http://localhost:3001/api/flights
+```
+
+### Send Flight Data (from Roblox)
+```bash
+POST http://localhost:3001/api/flights/update
+Content-Type: application/json
+
+[
+  {
+    "callsign": "AAL123",
+    "latitude": 40.6413,
+    "longitude": -73.7781,
+    "altitude": 5000,
+    "heading": 180,
+    "ground_speed": 450,
+    "vertical_speed": 0,
+    "squawk": "1234",
+    "status": "active"
+  }
+]
+```
+
+## 🔧 Configuration
+
+Create `.env` file in `server/`:
+
+```bash
+PORT=3001
+NODE_ENV=development
+DB_NAME=atc365_radar
+```
+
+## 📚 How It Works
+
+```
+Roblox PTFS Server
+       ↓
+   (Lua Script)
+       ↓
+  HTTP POST (500ms)
+       ↓
+Backend (Node.js)
+       ↓
+  WebSocket Broadcast
+       ↓
+Frontend (React)
+       ↓
+  Live Radar Display
+```
+
+## ✨ Features
+
+- **Real-time Updates**: 500ms refresh rate
+- **Interactive Radar**: Pan, zoom, measure distances
+- **Professional UI**: Dark ATC theme
+- **Airport Selection**: Switch between airspaces
+- **Mock Data**: Test without Roblox server
+
+## 📦 Docker Deployment
+
+```bash
+docker-compose up
+```
+
+Runs on `http://localhost:3000` (frontend) and `http://localhost:3001` (backend)
+
+## 🎮 Testing Without Roblox
+
+The radar includes a mock flight generator. Just run the backend and frontend - it will automatically generate 6 test flights that update in real-time.
+
+## 🐛 Troubleshooting
+
+**"WebSocket connection failed"**
+- Ensure backend is running: `npm run dev` in server directory
+- Check port 3001 is not blocked by firewall
+
+**"Flights not showing"**
+- Check Roblox script is sending data correctly
+- Use browser DevTools to verify API calls
+- Check backend logs for errors
+
+**"Radar freezes or lags"**
+- Reduce update frequency in Roblox script (increase `UPDATE_INTERVAL`)
+- Check network connection
+- Monitor backend CPU usage
+
+## 📝 License
+
+MIT License
+
+## 🤝 Support
+
+- **Issues**: Report via GitHub Issues
+- **Questions**: Post in GitHub Discussions
+
+---
+
+Built specifically for Roblox PTFS servers. ✈️

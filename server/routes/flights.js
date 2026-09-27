@@ -3,26 +3,6 @@ import { updateAircraftPosition, getAllFlights } from '../models/Flight.js';
 
 const router = express.Router();
 
-// Middleware to check API key (optional)
-const checkApiKey = (req, res, next) => {
-  const apiKey = process.env.FLIGHT_ENDPOINT_KEY;
-  if (!apiKey) {
-    return next(); // No key required if not configured
-  }
-
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Missing or invalid Authorization header' });
-  }
-
-  const key = authHeader.substring(7);
-  if (key !== apiKey) {
-    return res.status(403).json({ error: 'Invalid API key' });
-  }
-
-  next();
-};
-
 // Get all flights
 router.get('/', (req, res) => {
   try {
@@ -52,8 +32,8 @@ router.get('/:callsign', (req, res) => {
   }
 });
 
-// Update flight data (for external integrations)
-router.post('/update', checkApiKey, (req, res) => {
+// Update flight data from Roblox server
+router.post('/update', (req, res) => {
   try {
     const flights = Array.isArray(req.body) ? req.body : [req.body];
 
