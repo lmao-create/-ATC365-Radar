@@ -161,7 +161,7 @@ MIT
 ## 🔗 Links
 
 - **[Integration Guide](./INTEGRATION.md)** - Detailed Roblox setup
-- **[Issues](https://github.com/yourusername/atc365-radar/issues)** - Report bugs
+- **[Issues](https://github.com/lmao-create/-ATC365-Radar/issues)** - Report bugs
 
 ---
 
