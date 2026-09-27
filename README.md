@@ -156,7 +156,7 @@ Run without Roblox server - mock data automatically generates 6 test flights.
 
 ## 📝 License
 
-MIT
+See the [License](LICENSE) for more information
 
 ## 🔗 Links
 
